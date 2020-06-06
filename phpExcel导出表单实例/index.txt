@@ -1,0 +1,7 @@
+导出excel思路 ：
+
+	方法一：在html页面跳转去一个新的方法explodeExcel里面执行导出excel，在explodeExcel方法里面通过 $this->getForm() 调用getForm方法获取表单数据内容，return表单数据。
+	
+	方法二：在html页面跳回原来的控制器方法getForm，url加多一个参数，表明是要导出excel，在getForm判断如果带有那个参数，则通过 $this->explodeExcel($data) 导出excel表格。
+	
+	小结：推荐使用方法二。

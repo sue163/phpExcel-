@@ -1,0 +1,127 @@
+导出Excel数据乱码：
+
+1、可以使用header("content-type:text/html;charset=utf8");//设置编码
+2、可以使用$content = iconv("gb2312","utf-8//IGNORE",$content); //gb2312换为utf-8
+3、使用htmlExcel
+
+PS：
+1、2种方法只能是设置浏览器编码，在浏览器显示数据正常，但是excel无法设置识别编码，自动识别，
+所以使用第3种方法更实用。例子如下：
+
+
+<?php
+set_time_limit (0);
+header("content-type:text/html;charset=utf8");         //设置编码
+header("Content-type:application/vnd.ms-excel"); 
+header("Content-Disposition:attachment;filename=product.xls"); 
+require_once($_SERVER['DOCUMENT_ROOT']."/includes/configure.php");
+// Create connection
+$link = mysql_connect(DB_SERVER, DB_SERVER_USERNAME, DB_SERVER_PASSWORD) 
+or die('Could not connect: ' . mysql_error()); 
+//echo "Database connected successfully.<br>";
+mysql_select_db(DB_DATABASE) or die('Could not select database'); 
+
+$query = "SELECT p.*,pt.type_name as products_type_name,pd.products_name,pd.products_description,pd.products_viewed FROM products p left join products_description pd on p.products_id=pd.products_id left join product_types pt on pt.type_id=p.products_type WHERE pd.language_id=2 order by p.products_id DESC limit 1000";
+mysql_query("set names latin1");//设置数据库使用的编码方式
+//mysql_query("set names 'utf8'");
+
+$res = mysql_query($query) or die('Query failed: ' . mysql_error()); 
+
+$datas=array();
+
+while($row = mysql_fetch_assoc($res)){
+  $query2 = "SELECT cd.categories_name FROM products_to_categories pc left join categories_description cd on pc.categories_id=cd.categories_id WHERE cd.language_id=2 and pc.products_id='".$row['products_id']."'";
+  $res2 = mysql_query($query2) or die('Query failed: ' . mysql_error()); 
+  $row['products_categorie']='';
+  while($row2 = mysql_fetch_assoc($res2)){
+    if($row['products_categorie']==''){
+      $row['products_categorie'] = $row2['categories_name'];
+    }else{
+      $row['products_categorie'] .= $row2['categories_name'].'/';
+    }
+  }
+
+  $row['products_description']=html2text($row['products_description']);
+  $datas[] = $row;
+}
+
+function html2text($str){
+ $str = preg_replace("/<style .*?<\\/style>/is", "", $str);
+ $str = preg_replace("/<script .*?<\\/script>/is", "", $str);
+ $str = preg_replace("/<br \\s*\\/>/i", ">>>>", $str);
+ $str = preg_replace("/<\\/?p>/i", ">>>>", $str);
+ $str = preg_replace("/<\\/?td>/i", "", $str);
+ $str = preg_replace("/<\\/?div>/i", ">>>>", $str);
+ $str = preg_replace("/<\\/?blockquote>/i", "", $str);
+ $str = preg_replace("/<\\/?li>/i", ">>>>", $str);
+ $str = preg_replace("/ /i", " ", $str);
+ $str = preg_replace("/ /i", " ", $str);
+ $str = preg_replace("/&/i", "&", $str);
+ $str = preg_replace("/&/i", "&", $str);
+ $str = preg_replace("/</i", "<", $str);
+ $str = preg_replace("/</i", "<", $str);
+ $str = preg_replace("/“/i", '"', $str);
+ $str = preg_replace("/&ldquo/i", '"', $str);
+ $str = preg_replace("/‘/i", "'", $str);
+ $str = preg_replace("/&lsquo/i", "'", $str);
+ $str = preg_replace("/'/i", "'", $str);
+ $str = preg_replace("/&rsquo/i", "'", $str);
+ $str = preg_replace("/>/i", ">", $str);
+ $str = preg_replace("/>/i", ">", $str);
+ $str = preg_replace("/”/i", '"', $str);
+ $str = preg_replace("/&rdquo/i", '"', $str);
+ $str = strip_tags($str);
+ $str = html_entity_decode($str, ENT_QUOTES, "utf8");
+ $str = preg_replace("/&#.*?;/i", "", $str);
+ return $str;
+}
+mysql_close($link); 
+
+?>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" 
+ xmlns:x="urn:schemas-microsoft-com:office:excel" 
+ xmlns="http://www.w3.org/TR/REC-html40"> 
+
+ <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> 
+ <html> 
+     <head> 
+        <meta http-equiv="Content-type" content="text/html;charset=UTF-8" /> 
+         <style id="Classeur1_16681_Styles"></style> 
+     </head> 
+     <body> 
+         <div id="Classeur1_16681" align=center x:publishsource="Excel"> 
+             <table x:str border=1 cellpadding=0 cellspacing=0 width=100% style="border-collapse: collapse"> 
+              <thead>
+                <tr>
+                  <th>Products Id</th>
+                  <th>Name</th>
+                  <th>Model</th>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Price</th>
+                  <th>Image</th>
+                  <th>Sort</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <?php foreach($datas as $data){?>
+                 <tr>
+                  <td class=xl2216681 nowrap><?php echo $data['products_id']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_name']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_model']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_type_name']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_categorie']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_description']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_price']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_image']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_sort_order']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_status']?></td>
+                  <td class=xl2216681 nowrap><?php echo $data['products_date_added']?></td>
+                </tr>
+              <?php } ?>
+             </table> 
+         </div> 
+     </body> 
+ </html> 
